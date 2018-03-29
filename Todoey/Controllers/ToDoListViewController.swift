@@ -11,34 +11,15 @@ import UIKit
 class ToDoListViewController: UITableViewController {
 
     var itemArray = [Item]()
-    let defaults = UserDefaults.standard
     
     let itemArrayKey = "TodoListArray"
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-
-//        if let items = defaults.array(forKey: itemArrayKey) as? [String] {
-//            itemArray = items
-//
-//        }
         
-        let newItem1 = Item()
-        newItem1.title = "Buy some eggs"
-        itemArray.append(newItem1)
-        
-        let newItem2 = Item()
-        newItem2.title = "Buy some bread"
-        itemArray.append(newItem2)
-        
-        let newItem3 = Item()
-        newItem3.title = "Buy some beer"
-        itemArray.append(newItem3)
-        
-        if let item = defaults.array(forKey: itemArrayKey) as? [Item] {
-            itemArray = item
-        }
+        loadItems()
         
     }
 
@@ -78,8 +59,10 @@ class ToDoListViewController: UITableViewController {
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
+        saveItems()
+        
         tableView.deselectRow(at: indexPath, animated: true)
-        tableView.reloadData()
+        
     }
     
     
@@ -98,9 +81,9 @@ class ToDoListViewController: UITableViewController {
             newItem.title = textField.text!
             
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: self.itemArrayKey)
+
+            self.saveItems()
             
-            self.tableView.reloadData()
         }))
         
         alert.addTextField { (alertTextField) in
@@ -112,8 +95,34 @@ class ToDoListViewController: UITableViewController {
     }
     
     
+    //******* MARK - Model manupulation methods *******
     
+    func saveItems() -> Void {
+        
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(self.itemArray)
+            try data.write(to: self.dataFilePath!)
+        } catch {
+            print(error)
+        }
+        
+        self.tableView.reloadData()
+        
+    }
     
+    func loadItems() -> Void {
+        
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data) //Refers the type of [Item], so we add the .self here
+            } catch {
+                print(error)
+            }
+        }
+    }
     
     
     
