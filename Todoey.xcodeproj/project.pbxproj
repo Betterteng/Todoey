@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		401D4C8920AC0093002A03CB /* CategoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 401D4C8820AC0093002A03CB /* CategoryViewController.swift */; };
 		4042DDF82068C9A0007015A3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4042DDF72068C9A0007015A3 /* AppDelegate.swift */; };
 		4042DDFA2068C9A0007015A3 /* ToDoListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4042DDF92068C9A0007015A3 /* ToDoListViewController.swift */; };
 		4042DDFD2068C9A0007015A3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4042DDFB2068C9A0007015A3 /* Main.storyboard */; };
@@ -16,6 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		401D4C8820AC0093002A03CB /* CategoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryViewController.swift; sourceTree = "<group>"; };
 		4042DDF42068C9A0007015A3 /* Todoey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Todoey.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4042DDF72068C9A0007015A3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4042DDF92068C9A0007015A3 /* ToDoListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoListViewController.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 		40591F60206B5E940097760B /* Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				401D4C8820AC0093002A03CB /* CategoryViewController.swift */,
 				4042DDF92068C9A0007015A3 /* ToDoListViewController.swift */,
 			);
 			path = Controllers;
@@ -171,6 +174,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				401D4C8920AC0093002A03CB /* CategoryViewController.swift in Sources */,
 				4042DDFA2068C9A0007015A3 /* ToDoListViewController.swift in Sources */,
 				40591F86206CA2960097760B /* DataModel.xcdatamodeld in Sources */,
 				4042DDF82068C9A0007015A3 /* AppDelegate.swift in Sources */,
@@ -313,6 +317,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = D2444HVW52;
 				INFOPLIST_FILE = Todoey/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.shinanteng.Todoey;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -328,6 +333,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = D2444HVW52;
 				INFOPLIST_FILE = Todoey/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.shinanteng.Todoey;
 				PRODUCT_NAME = "$(TARGET_NAME)";
