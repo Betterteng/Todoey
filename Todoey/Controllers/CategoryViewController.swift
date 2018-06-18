@@ -44,7 +44,7 @@ class CategoryViewController: UITableViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let destinationVC = segue.destination as! ToDoListViewController
         
-        if let indexPath = tableView.indexPathForSelectedRow {
+        if let indexPath = tableView.indexPathForSelectedRow {  //  The value of indexPathForSelectedRow could be nil, since users may select a row without any text, i.e. the blank row. This is why we need to check if it is nil...
             destinationVC.selectedCategory = categoryArray[indexPath.row]
         }
     }
@@ -56,7 +56,7 @@ class CategoryViewController: UITableViewController {
         let alert = UIAlertController(title: "Add new Todoey category", message: "", preferredStyle: .alert)
         
         alert.addAction(UIAlertAction(title: NSLocalizedString("Add category", comment: "Default action"), style: .default, handler: { _ in
-            //What will happen once the user click the [Add item] button...
+            //What will happen once the user click the [Add category] button...
             let newCategory = Category(context: self.context)
             //Set the values...
             newCategory.name = textField.text!
@@ -93,7 +93,6 @@ class CategoryViewController: UITableViewController {
         } catch {
             print("\n*****Error fetching data from the database: \(error)\n")
         }
-        
         tableView.reloadData()
     }
     
