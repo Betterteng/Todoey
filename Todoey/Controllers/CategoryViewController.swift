@@ -7,30 +7,29 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
     
-    var categoryArray = [Category]()
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-
+    let realm = try! Realm()
+    var categories: Results<Category>?  // Auto updata container...
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         loadCategories()
     }
     
     //******* MARK: - TableView datasource methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryArray.count
+        // 这句话的意思是：如果categories unwrap之后不是nil，那就返回categories.count。如果是nil，就返回1
+        return categories?.count ?? 1  // This is called - nil coalesing operator...
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let category = categoryArray[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        
-        cell.textLabel?.text = category.name
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories add yet..."
         
         return cell
     }
@@ -45,10 +44,10 @@ class CategoryViewController: UITableViewController {
         let destinationVC = segue.destination as! ToDoListViewController
         
         if let indexPath = tableView.indexPathForSelectedRow {  //  The value of indexPathForSelectedRow could be nil, since users may select a row without any text, i.e. the blank row. This is why we need to check if it is nil...
-            destinationVC.selectedCategory = categoryArray[indexPath.row]
+            destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
-
+    
     //******* MARK: - Add new items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -57,12 +56,11 @@ class CategoryViewController: UITableViewController {
         
         alert.addAction(UIAlertAction(title: NSLocalizedString("Add category", comment: "Default action"), style: .default, handler: { _ in
             //What will happen once the user click the [Add category] button...
-            let newCategory = Category(context: self.context)
+            let newCategory = Category()
             //Set the values...
             newCategory.name = textField.text!
             
-            self.categoryArray.append(newCategory)
-            self.saveCategory()
+            self.save(category: newCategory)
         }))
         
         alert.addTextField { (alertTextField) in
@@ -74,12 +72,10 @@ class CategoryViewController: UITableViewController {
     
     //******* MARK: - Model manupulation methods
     
-    func saveCategory() -> Void {
+    func save(category: Category) -> Void {
         do {
-            if context.hasChanges {
-                try context.save()
-            } else {
-                print("\nNo changes...")
+            try realm.write {
+                realm.add(category)
             }
         } catch {
             print("\nError Saving Context: \(error)")
@@ -87,12 +83,9 @@ class CategoryViewController: UITableViewController {
         self.tableView.reloadData() // Force the system to reload the datasource methods again. 这样做的好处就是任何obj的改动，在tableView中都会立即体现。
     }
     
-    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) -> Void {
-        do {
-            categoryArray = try context.fetch(request)
-        } catch {
-            print("\n*****Error fetching data from the database: \(error)\n")
-        }
+    func loadCategories() -> Void {
+        
+        categories = realm.objects(Category.self)  // This will return all the categories...
         tableView.reloadData()
     }
     

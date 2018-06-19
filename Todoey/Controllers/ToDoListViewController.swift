@@ -7,11 +7,12 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class ToDoListViewController: UITableViewController {
 
-    var itemArray = [Item]()
+    let realm = try! Realm()
+    var toDoItems: Results<Item>?
     var selectedCategory: Category? {
         didSet { // 【selectedCategory】之所以是Optional的，是因为只有在CategoryViewController中被设置好后才会得到值。当【selectedCategory】被赋值后，didSet{}中的代码会被执行。
             loadItems()
@@ -21,8 +22,6 @@ class ToDoListViewController: UITableViewController {
     //let defaults = UserDefaults.standard
     
     let itemArrayKey = "TodoListArray"
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext  // Grab the context for the persistant container...
-    // 上一行代码，如果option + click 到 delegate 关键字上，会发现它是一个Optional的 【UIApplicationDelegate？】，所以要用as来cast一下。
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,17 +39,20 @@ class ToDoListViewController: UITableViewController {
     //******* MARK: - TableView datasource methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return itemArray.count
+        return toDoItems?.count ?? 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = itemArray[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        cell.textLabel?.text = item.title
         
-        //Ternary Operator
-        //value = condition ? valueIfTrue : valueIfFalse
-        cell.accessoryType = item.done ? .checkmark : .none
+        if let item = toDoItems?[indexPath.row] {
+            cell.textLabel?.text = item.title
+            //Ternary Operator
+            //value = condition ? valueIfTrue : valueIfFalse
+            cell.accessoryType = item.done ? .checkmark : .none
+        } else {
+            cell.textLabel?.text = "No items added..."
+        }
         
         return cell
     }
@@ -62,12 +64,18 @@ class ToDoListViewController: UITableViewController {
      * Change the status of the row that user selected (Change the checkmark status).
      **/
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if let item = toDoItems?[indexPath.row] {
+            do {
+                try realm.write {
+                    item.done = !item.done
+                }
+            } catch {
+                print("Error saving done status: \(error)")
+            }
+        }
         
-//        context.delete(itemArray[indexPath.row]) //The order of these two statements matters. Delete the records in context first, then delete the cell in the table.
-//        itemArray.remove(at: indexPath.row)
+        tableView.reloadData()
         
-        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        saveItems()
         tableView.deselectRow(at: indexPath, animated: true) // To deploy the flash-grey animation.
     }
     
@@ -76,60 +84,42 @@ class ToDoListViewController: UITableViewController {
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField: UITextField!
+//        let dateFormatter = DateFormatter()
+//        dateFormatter.dateFormat = "dd.MM.yyyy"
         let alert = UIAlertController(title: "Add new Todoey item", message: "", preferredStyle: .alert)
         
         alert.addAction(UIAlertAction(title: NSLocalizedString("Add item", comment: "Default action"), style: .default, handler: { _ in
-            //What will happen once the user click the [Add item] button...
-            let newItem = Item(context: self.context)
-            //Set the values...
-            newItem.title = textField.text!
-            newItem.done = false
-            newItem.parentCategory = self.selectedCategory
+            if let currentCategory = self.selectedCategory {
+                do {
+                    try self.realm.write {
+                        let newItem = Item()
+                        newItem.title = textField.text!
+                        newItem.dateCreated = Date()
+                        currentCategory.items.append(newItem)
+                    }
+                } catch {
+                    print("Error storing the Item: \(error)")
+                }
+            }
             
-            self.itemArray.append(newItem)
-            self.saveItems()
+            self.tableView.reloadData()
         }))
         
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new item..."
             textField = alertTextField
         }
+        
         self.present(alert, animated: true, completion: nil)
     }
     
     
     //******* MARK: - Model manupulation methods
     
-    func saveItems() -> Void {
-        do {
-            if context.hasChanges {
-                try context.save()
-            } else {
-                print("\nNo changes...")
-            }
-        } catch {
-            print("\nError Saving Context: \(error)")
-        }
-        self.tableView.reloadData() // Force the system to reload the datasource methods again. 这样做的好处就是任何obj的改动，在tableView中都会立即体现。
-    }
-    
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) -> Void { //如果看见了等号，那就意味着给parm了一个default vale，这样call这个method的时候括号里就什么都不用放了。e.g. 看viewDidLoad()
-        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+    func loadItems() -> Void {
+        toDoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
         
-        if let additionalPredicate = predicate {
-            let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
-            request.predicate = compoundPredicate
-        } else {
-            request.predicate = categoryPredicate
-        }
-        
-        do {
-            itemArray = try context.fetch(request) // So now, the [itemArray] is corresponding with the [context]...
-        } catch {
-            print("\nError fetching data from context: \(error)")
-        }
-        
-        tableView.reloadData()
+        tableView.reloadData()  //  Now the tableView data source methods will be reloaded...
     }
 }
 
@@ -137,22 +127,17 @@ class ToDoListViewController: UITableViewController {
 //******* MARK: - Search Bar methods
 
 extension ToDoListViewController: UISearchBarDelegate {
-    
+
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
-        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+        toDoItems = toDoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
         
-        request.predicate = predicate
-        request.sortDescriptors = [sortDescriptor]
-        
-        loadItems(with: request, predicate: predicate)
+        tableView.reloadData()
     }
-    
+
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0 {
             loadItems()
-            
+
             // Tell the system, we're gonna occupy the main thread to do something. p.s. "Something" is in the {sth}...
             // i.e. To run something on the main queue (main thread)...
             DispatchQueue.main.async {
